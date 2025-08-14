@@ -197,6 +197,34 @@ func (tm *TenantManager) UpdateConcurrency(ctx context.Context, tenantID string,
 	return nil
 }
 
+func (tm *TenantManager) StopAllConsumers() {
+	tm.mutex.Lock()
+	defer tm.mutex.Unlock()
+
+	log.Printf("Stopping %d tenant consumers...", len(tm.consumers))
+
+	for tenantID, consumer := range tm.consumers {
+		// Send shutdown signal
+		select {
+		case consumer.StopChannel <- true:
+			log.Printf("Shutdown signal sent to tenant %s", tenantID)
+		default:
+			// Channel might be closed, try closing it
+			close(consumer.StopChannel)
+		}
+
+		// Close RabbitMQ channel
+		if consumer.Channel != nil {
+			consumer.Channel.Close()
+		}
+	}
+
+	// Clear all consumers
+	tm.consumers = make(map[string]*TenantConsumer)
+
+	log.Println("All tenant consumers stopped")
+}
+
 func (tm *TenantManager) createMessagePartition(tenantID string) error {
 	partitionName := fmt.Sprintf("messages_tenant_%s",
 		strings.ReplaceAll(tenantID, "-", ""))

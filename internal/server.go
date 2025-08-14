@@ -2,10 +2,13 @@ package internal
 
 import (
 	"context"
+	"errors"
+	"net/http"
 	"time"
 
 	"github.com/Abdurrochman25/multi-tenant-messaging-system/internal/config"
 	"github.com/Abdurrochman25/multi-tenant-messaging-system/internal/router"
+	"github.com/Abdurrochman25/multi-tenant-messaging-system/internal/services"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/log"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -23,6 +26,8 @@ func Init() {
 	}
 
 	s.NewRabbitMQ()
+	rabbitmqService := services.NewRabbitMQService(s)
+	tenantManager := services.NewTenantManager(s.DB, rabbitmqService)
 
 	s.Fiber = fiber.New(fiber.Config{
 		Immutable: true,
@@ -38,11 +43,28 @@ func Init() {
 		},
 	}
 
-	router.AttachAllRoutes(s)
+	router.AttachAllRoutes(s, tenantManager)
 
 	// Custom 404 Handler
 	s.Fiber.Use(func(c *fiber.Ctx) error {
 		return c.SendString("Not Found")
 	})
-	log.Fatal(s.Fiber.Listen(":3000"))
+
+	go func() {
+		if err := s.Fiber.Listen(":3000"); err != nil {
+			if errors.Is(err, http.ErrServerClosed) {
+				log.Info("Server closed")
+			} else {
+				log.Fatalf("Failed to start server, err: %s", err.Error())
+			}
+		}
+	}()
+
+	// Setup graceful shutdown
+	shutdownManager := &services.ShutdownManager{
+		TenantManager: tenantManager,
+		Server:        s.Fiber,
+	}
+	// Start graceful shutdown handler
+	shutdownManager.GracefulShutdown()
 }

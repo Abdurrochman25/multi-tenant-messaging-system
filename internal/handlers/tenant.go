@@ -14,10 +14,8 @@ type TenantHandler struct {
 	tenantManager *services.TenantManager
 }
 
-func NewTenantHandler(s *config.Server) []fiber.Router {
-	rabbitmqService := services.NewRabbitMQService(s)
-	tenantManager := services.NewTenantManager(s.DB, rabbitmqService)
-	handler := TenantHandler{tenantManager: tenantManager}
+func NewTenantHandler(s *config.Server, tm *services.TenantManager) []fiber.Router {
+	handler := TenantHandler{tenantManager: tm}
 
 	return []fiber.Router{
 		s.Fiber.Post("/v1/tenants", handler.CreateTenant),
