@@ -1216,3 +1216,7 @@ func TenantConfigExists(ctx context.Context, exec boil.ContextExecutor, iD strin
 func (o *TenantConfig) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, error) {
 	return TenantConfigExists(ctx, exec, o.ID)
 }
+
+type TenantConfigRequest struct {
+	Workers int `json:"workers" binding:"required,min=1,max=50"`
+}

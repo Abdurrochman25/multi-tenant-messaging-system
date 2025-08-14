@@ -14,6 +14,7 @@ import (
 	"github.com/Abdurrochman25/multi-tenant-messaging-system/internal/models"
 	"github.com/aarondl/null/v8"
 	"github.com/aarondl/sqlboiler/v4/boil"
+	"github.com/aarondl/sqlboiler/v4/queries/qm"
 	"github.com/google/uuid"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -132,6 +133,66 @@ func (tm *TenantManager) DeleteTenant(ctx context.Context, tenantID string) erro
 	}
 
 	log.Printf("Tenant %s deleted successfully", tenantID)
+
+	return nil
+}
+
+func (tm *TenantManager) UpdateConcurrency(ctx context.Context, tenantID string, config *models.TenantConfigRequest) error {
+	tm.mutex.Lock()
+	defer tm.mutex.Unlock()
+
+	// Update database first
+	configJSON, err := json.Marshal(config)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := models.TenantConfigs(qm.Where("tenant_id=?", tenantID)).
+		UpdateAll(ctx, tm.db, models.M{"config_value": configJSON})
+	if err != nil {
+		return fmt.Errorf("failed to update tenant in database: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("tenant not found or deleted")
+	}
+
+	// 2. Update consumer worker pool
+	consumer, exists := tm.consumers[tenantID]
+	if !exists {
+		return fmt.Errorf("consumer for tenant %s not found", tenantID)
+	}
+
+	currentWorkerCount := int(atomic.LoadInt64(consumer.WorkerCount))
+
+	if config.Workers > currentWorkerCount {
+		// Add more workers to pool
+		for range config.Workers - currentWorkerCount {
+			select {
+			case consumer.WorkerPool <- struct{}{}:
+				// Worker added successfully
+			default:
+				// Pool is full, this shouldn't happen but handle gracefully
+				break
+			}
+		}
+	} else if config.Workers < currentWorkerCount {
+		// Remove workers from pool
+		for range currentWorkerCount - config.Workers {
+			select {
+			case <-consumer.WorkerPool:
+				// Worker removed successfully
+			default:
+				// No workers available to remove, that's ok
+				break
+			}
+		}
+	}
+
+	// 3. Update worker count
+	atomic.StoreInt64(consumer.WorkerCount, int64(config.Workers))
+
+	log.Printf("Updated tenant %s worker count from %d to %d",
+		tenantID, currentWorkerCount, config.Workers)
 
 	return nil
 }

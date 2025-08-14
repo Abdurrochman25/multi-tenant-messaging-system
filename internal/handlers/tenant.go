@@ -22,6 +22,7 @@ func NewTenantHandler(s *config.Server) []fiber.Router {
 	return []fiber.Router{
 		s.Fiber.Post("/v1/tenants", handler.CreateTenant),
 		s.Fiber.Delete("/v1/tenants/:id", handler.DeleteTenant),
+		s.Fiber.Put("/v1/tenants/:id/config/concurrency", handler.UpdateTenantConfig),
 	}
 }
 
@@ -54,4 +55,21 @@ func (h *TenantHandler) DeleteTenant(c *fiber.Ctx) error {
 	}
 
 	return c.Status(http.StatusOK).JSON("tenant deleted")
+}
+
+// [PUT] /v1/tenants/{id}/config/concurreny
+func (h *TenantHandler) UpdateTenantConfig(c *fiber.Ctx) error {
+	tenantID := c.Params("id")
+
+	config := new(models.TenantConfigRequest)
+	if err := c.BodyParser(&config); err != nil {
+		return c.JSON(fiber.NewError(http.StatusBadRequest, err.Error()))
+	}
+
+	err := h.tenantManager.UpdateConcurrency(c.Context(), tenantID, config)
+	if err != nil {
+		return c.JSON(fiber.NewError(http.StatusInternalServerError, err.Error()))
+	}
+
+	return c.Status(http.StatusOK).JSON("tenant config updated")
 }
