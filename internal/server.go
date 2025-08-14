@@ -15,12 +15,11 @@ func Init() {
 
 	s := config.NewServer(conf)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
 	if err := s.NewDB(ctx); err != nil {
-		cancel()
 		log.Fatalf("Failed to initialize database; error: %v", err)
 	}
-	cancel()
 
 	s.Fiber = fiber.New(fiber.Config{
 		Immutable: true,

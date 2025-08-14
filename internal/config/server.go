@@ -4,9 +4,9 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/aarondl/sqlboiler/v4/boil"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/log"
-	_ "github.com/lib/pq"
 )
 
 type Router struct {
@@ -39,6 +39,8 @@ func (s *Server) NewDB(ctx context.Context) error {
 	}
 
 	s.DB = db
+	boil.SetDB(db)
+	boil.DebugMode = true
 
 	log.Info("database successfully connected")
 	return nil
