@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/Abdurrochman25/multi-tenant-messaging-system/internal/config"
+	"github.com/Abdurrochman25/multi-tenant-messaging-system/internal/router"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/log"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -21,6 +22,8 @@ func Init() {
 		log.Fatalf("Failed to initialize database; error: %v", err)
 	}
 
+	s.NewRabbitMQ()
+
 	s.Fiber = fiber.New(fiber.Config{
 		Immutable: true,
 	})
@@ -34,6 +37,8 @@ func Init() {
 			}),
 		},
 	}
+
+	router.AttachAllRoutes(s)
 
 	// Custom 404 Handler
 	s.Fiber.Use(func(c *fiber.Ctx) error {
