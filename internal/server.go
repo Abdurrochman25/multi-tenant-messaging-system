@@ -28,6 +28,7 @@ func Init() {
 	s.NewRabbitMQ()
 	rabbitmqService := services.NewRabbitMQService(s)
 	tenantManager := services.NewTenantManager(s.DB, rabbitmqService)
+	messageServices := services.NewMessageService(s.DB, rabbitmqService)
 
 	s.Fiber = fiber.New(fiber.Config{
 		Immutable: true,
@@ -43,7 +44,7 @@ func Init() {
 		},
 	}
 
-	router.AttachAllRoutes(s, tenantManager)
+	router.AttachAllRoutes(s, tenantManager, messageServices)
 
 	// Custom 404 Handler
 	s.Fiber.Use(func(c *fiber.Ctx) error {

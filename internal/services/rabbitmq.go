@@ -1,10 +1,13 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/Abdurrochman25/multi-tenant-messaging-system/internal/config"
+	"github.com/gofiber/fiber/v2"
 	"github.com/gofrs/uuid"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -53,8 +56,31 @@ func (r *RabbitMQService) PublishMessage(tenantID uuid.UUID, payload []byte) err
 		false,     // mandatory
 		false,     // immediate
 		amqp.Publishing{
-			ContentType: "application/json",
+			ContentType: fiber.MIMEApplicationJSON,
 			Body:        payload,
 		},
 	)
+}
+
+func (r *RabbitMQService) PublishMessageWithHeaders(ctx context.Context, tenantID string, payload []byte, headers map[string]any) error {
+	ctxTimeout, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	queueName := fmt.Sprintf("tenant_%s_queue", tenantID)
+	err := r.ch.PublishWithContext(ctxTimeout,
+		"",        // exchange
+		queueName, // routing key
+		false,     // mandatory
+		false,
+		amqp.Publishing{
+			ContentType: fiber.MIMEApplicationJSON,
+			Body:        payload,
+			Headers:     headers,
+		})
+	if err != nil {
+		log.Printf("Failed to publish a message, err: %s", err.Error())
+		return err
+	}
+	log.Printf(" [x] Sent %s", payload)
+	return nil
 }
