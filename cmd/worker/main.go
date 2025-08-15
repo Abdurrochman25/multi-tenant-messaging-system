@@ -106,7 +106,6 @@ func main() {
 	// Setup graceful shutdown
 	shutdownManager := &services.ShutdownManager{
 		TenantManager: tm,
-		// Server:        s.Fiber,
 	}
 	// Start graceful shutdown handler
 	shutdownManager.GracefulShutdown()

@@ -141,12 +141,13 @@ func (s *TestSuite) runMigrations() error {
 			max_workers INTEGER,
 			current_workers INTEGER,
 			queue_name VARCHAR(255),
+			consumer_tag VARCHAR(255),
 			created_at TIMESTAMPTZ DEFAULT NOW(),
 			updated_at TIMESTAMPTZ DEFAULT NOW(),
 			deleted_at TIMESTAMPTZ
 		);`,
 		`CREATE TABLE IF NOT EXISTS messages (
-			id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+			id UUID DEFAULT uuid_generate_v4(),
 			tenant_id UUID NOT NULL,
 			payload JSONB,
 			status VARCHAR(50) DEFAULT 'pending',
@@ -154,7 +155,8 @@ func (s *TestSuite) runMigrations() error {
 			max_retries INTEGER DEFAULT 3,
 			scheduled_at TIMESTAMPTZ,
 			processed_at TIMESTAMPTZ,
-			created_at TIMESTAMPTZ DEFAULT NOW()
+			created_at TIMESTAMPTZ DEFAULT NOW(),
+			PRIMARY KEY (id, tenant_id)
 		) PARTITION BY LIST (tenant_id);`,
 		`CREATE TABLE IF NOT EXISTS tenant_configs (
 			id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -247,6 +249,9 @@ func (s *TestSuite) setupApp() error {
 	})
 
 	server.Fiber = s.app
+	server.Router = &config.Router{
+		Routes: []fiber.Router{},
+	}
 	router.AttachAllRoutes(server, tenantManager, messageServices)
 
 	return nil
@@ -281,7 +286,9 @@ func (s *TestSuite) TestTenantLifecycle(t *testing.T) {
 	}
 
 	if resp.StatusCode != http.StatusCreated {
-		t.Fatalf("Expected status 201, got %d", resp.StatusCode)
+		body := make([]byte, 1024)
+		resp.Body.Read(body)
+		t.Fatalf("Expected status 201, got %d, body: %s", resp.StatusCode, string(body))
 	}
 
 	var tenant models.Tenant
