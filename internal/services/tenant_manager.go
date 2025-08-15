@@ -312,6 +312,7 @@ func (tm *TenantManager) runConsumer(consumer *TenantConsumer, msgs <-chan amqp.
 	for {
 		select {
 		case <-consumer.StopChannel:
+			log.Printf("consumer %s has stopped", consumer.TenantID)
 			return
 		case msg := <-msgs:
 			// Get worker from pool (blocking if all busy)

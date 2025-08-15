@@ -26,11 +26,11 @@ import (
 type Tenant struct {
 	ID             string      `boil:"id" json:"id" toml:"id" yaml:"id"`
 	Name           string      `boil:"name" json:"name" toml:"name" yaml:"name"`
-	Status         null.String `boil:"status" json:"status,omitempty" toml:"status" yaml:"status,omitempty"`
-	MaxWorkers     null.Int    `boil:"max_workers" json:"max_workers,omitempty" toml:"max_workers" yaml:"max_workers,omitempty"`
-	CurrentWorkers null.Int    `boil:"current_workers" json:"current_workers,omitempty" toml:"current_workers" yaml:"current_workers,omitempty"`
+	Status         null.String `boil:"status" json:"status,omitempty" toml:"status" yaml:"status,omitempty" swaggertype:"string"`
+	MaxWorkers     null.Int    `boil:"max_workers" json:"max_workers,omitempty" toml:"max_workers" yaml:"max_workers,omitempty" swaggertype:"integer"`
+	CurrentWorkers null.Int    `boil:"current_workers" json:"current_workers,omitempty" toml:"current_workers" yaml:"current_workers,omitempty" swaggertype:"integer"`
 	QueueName      string      `boil:"queue_name" json:"queue_name" toml:"queue_name" yaml:"queue_name"`
-	ConsumerTag    null.String `boil:"consumer_tag" json:"consumer_tag,omitempty" toml:"consumer_tag" yaml:"consumer_tag,omitempty"`
+	ConsumerTag    null.String `boil:"consumer_tag" json:"consumer_tag,omitempty" toml:"consumer_tag" yaml:"consumer_tag,omitempty" swaggertype:"string"`
 	CreatedAt      null.Time   `boil:"created_at" json:"created_at,omitempty" toml:"created_at" yaml:"created_at,omitempty"`
 	UpdatedAt      null.Time   `boil:"updated_at" json:"updated_at,omitempty" toml:"updated_at" yaml:"updated_at,omitempty"`
 	DeletedAt      null.Time   `boil:"deleted_at" json:"deleted_at,omitempty" toml:"deleted_at" yaml:"deleted_at,omitempty"`

@@ -1,0 +1,278 @@
+basePath: /v1
+definitions:
+  handlers.LoginRequest:
+    properties:
+      password:
+        type: string
+      tenant_id:
+        type: string
+      username:
+        type: string
+    type: object
+  handlers.TokenResponse:
+    properties:
+      token:
+        type: string
+    type: object
+  models.MessageRequest:
+    properties:
+      data:
+        additionalProperties: true
+        type: object
+      priority:
+        description: 0=normal, 1=high, 2=urgent
+        type: integer
+      scheduled_at:
+        type: string
+      type:
+        type: string
+    required:
+    - data
+    - type
+    type: object
+  models.Tenant:
+    properties:
+      consumer_tag:
+        type: string
+      created_at:
+        type: string
+      current_workers:
+        type: integer
+      deleted_at:
+        type: string
+      id:
+        type: string
+      max_workers:
+        type: integer
+      name:
+        type: string
+      queue_name:
+        type: string
+      status:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.TenantConfigRequest:
+    properties:
+      workers:
+        maximum: 50
+        minimum: 1
+        type: integer
+    required:
+    - workers
+    type: object
+host: localhost:3000
+info:
+  contact:
+    email: support@example.com
+    name: API Support
+  description: A messaging system with multi-tenant support, dynamic consumer management,
+    and configurable concurrency
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: Multi-Tenant Messaging System API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate and receive a JWT token for API access
+      parameters:
+      - description: Login credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.TokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Login and get JWT token
+      tags:
+      - auth
+  /messages:
+    get:
+      description: Retrieve messages using cursor-based pagination
+      parameters:
+      - description: Cursor for pagination
+        in: query
+        name: cursor
+        type: string
+      - description: Number of messages to retrieve (max 100)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get messages with pagination
+      tags:
+      - messages
+  /tenants:
+    post:
+      consumes:
+      - application/json
+      description: Create a new tenant with specified configuration
+      parameters:
+      - description: Tenant information
+        in: body
+        name: tenant
+        required: true
+        schema:
+          $ref: '#/definitions/models.Tenant'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Tenant'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new tenant
+      tags:
+      - tenants
+  /tenants/{id}:
+    delete:
+      description: Delete a tenant and stop its consumer
+      parameters:
+      - description: Tenant ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete a tenant
+      tags:
+      - tenants
+  /tenants/{id}/config/concurrency:
+    put:
+      consumes:
+      - application/json
+      description: Update the worker count for a tenant
+      parameters:
+      - description: Tenant ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Configuration
+        in: body
+        name: config
+        required: true
+        schema:
+          $ref: '#/definitions/models.TenantConfigRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update tenant concurrency configuration
+      tags:
+      - tenants
+  /tenants/{tenant_id}/messages:
+    post:
+      consumes:
+      - application/json
+      description: Publish a message to a specific tenant's queue
+      parameters:
+      - description: Tenant ID
+        in: path
+        name: tenant_id
+        required: true
+        type: string
+      - description: Message data
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/models.MessageRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Publish a message
+      tags:
+      - messages
+swagger: "2.0"

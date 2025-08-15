@@ -35,8 +35,8 @@ func NewMessageHandler(s *config.Server, ms *services.MessageService) []fiber.Ro
 // @Param tenant_id path string true "Tenant ID"
 // @Param message body models.MessageRequest true "Message data"
 // @Success 202 {object} map[string]interface{}
-// @Failure 400 {object} fiber.Error
-// @Failure 500 {object} fiber.Error
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
 // @Router /tenants/{tenant_id}/messages [post]
 func (h *MessageHandler) PublishMessage(c *fiber.Ctx) error {
 	tenantID := c.Params("tenant_id")
@@ -69,12 +69,12 @@ func (h *MessageHandler) PublishMessage(c *fiber.Ctx) error {
 // @Param cursor query string false "Cursor for pagination"
 // @Param limit query int false "Number of messages to retrieve (max 100)"
 // @Success 200 {object} map[string]interface{}
-// @Failure 500 {object} fiber.Error
+// @Failure 500 {object} map[string]string
 // @Router /messages [get]
 func (h *MessageHandler) GetMessages(c *fiber.Ctx) error {
 	cursor := c.Query("cursor", "0")
 	limitStr := c.Query("limit", "20")
-	
+
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil || limit <= 0 || limit > 100 {
 		limit = 20

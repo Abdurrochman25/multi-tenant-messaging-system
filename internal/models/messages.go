@@ -993,8 +993,8 @@ func (o *Message) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, 
 }
 
 type MessageRequest struct {
-	Type        string         `json:"type" binding:"required"`
-	Data        map[string]any `json:"data" binding:"required"`
-	ScheduledAt *time.Time     `json:"scheduled_at,omitempty"`
-	Priority    int            `json:"priority,omitempty"` // 0=normal, 1=high, 2=urgent
+	Type        string                 `json:"type" binding:"required"`
+	Data        map[string]interface{} `json:"data" binding:"required"`
+	ScheduledAt *time.Time             `json:"scheduled_at,omitempty"`
+	Priority    int                    `json:"priority,omitempty"` // 0=normal, 1=high, 2=urgent
 }

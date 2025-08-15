@@ -39,8 +39,8 @@ func NewAuthHandler(s *config.Server, secret string) []fiber.Router {
 // @Produce json
 // @Param credentials body LoginRequest true "Login credentials"
 // @Success 200 {object} TokenResponse
-// @Failure 400 {object} fiber.Error
-// @Failure 401 {object} fiber.Error
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
 // @Router /auth/login [post]
 func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	var req LoginRequest
