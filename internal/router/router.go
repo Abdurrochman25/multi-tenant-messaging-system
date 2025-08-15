@@ -9,8 +9,9 @@ import (
 )
 
 func AttachAllRoutes(s *config.Server, tm *services.TenantManager, ms *services.MessageService) {
-	slices.Concat(
+	s.Router.Routes = slices.Concat(
 		s.Router.Routes,
+		handlers.NewAuthHandler(s, s.Config.AppSecret),
 		handlers.NewTenantHandler(s, tm),
 		handlers.NewMessageHandler(s, ms),
 	)

@@ -30,9 +30,9 @@ func (sm *ShutdownManager) GracefulShutdown() {
 	sm.wg.Wait()
 
 	// Shutdown HTTP server
-	if err := sm.Server.Shutdown(); err != nil {
-		log.Fatal("Server forced to shutdown:", err)
-	}
+	// if err := sm.Server.Shutdown(); err != nil {
+	// 	log.Fatal("Server forced to shutdown:", err)
+	// }
 
 	log.Println("Server exited")
 }

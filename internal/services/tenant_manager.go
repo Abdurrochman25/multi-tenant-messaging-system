@@ -42,15 +42,35 @@ func NewTenantManager(db *sql.DB, rabbitmq *RabbitMQService) *TenantManager {
 	}
 }
 
+func (tm *TenantManager) StartTenant(ctx context.Context, tenantID string, worker int) error {
+	// 4. Create RabbitMQ queue
+	err := tm.rabbitmq.CreateTenantQueue(tenantID)
+	if err != nil {
+		return err
+	}
+
+	// 5. Start consumer
+	err = tm.StartConsumer(tenantID, worker)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (tm *TenantManager) CreateTenant(ctx context.Context, name string, maxWorkers int) (*models.Tenant, error) {
 	// 1. Create tenant in database
+	if maxWorkers <= 0 {
+		maxWorkers = 3 //default
+	}
+	id := uuid.NewString()
 	tenant := &models.Tenant{
-		ID:             uuid.NewString(),
+		ID:             id,
 		Name:           name,
 		Status:         null.StringFrom("active"),
 		MaxWorkers:     null.IntFrom(maxWorkers),
 		CurrentWorkers: null.IntFrom(maxWorkers),
-		QueueName:      fmt.Sprintf("tenant_%s_queue", uuid.NewString()),
+		QueueName:      fmt.Sprintf("tenant_%s_queue", id),
 	}
 
 	// 2. Insert to database with partition creation

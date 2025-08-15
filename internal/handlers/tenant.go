@@ -24,7 +24,17 @@ func NewTenantHandler(s *config.Server, tm *services.TenantManager) []fiber.Rout
 	}
 }
 
-// [POST] /v1/tenants
+// CreateTenant creates a new tenant
+// @Summary Create a new tenant
+// @Description Create a new tenant with specified configuration
+// @Tags tenants
+// @Accept json
+// @Produce json
+// @Param tenant body models.Tenant true "Tenant information"
+// @Success 201 {object} models.Tenant
+// @Failure 400 {object} fiber.Error
+// @Failure 500 {object} fiber.Error
+// @Router /tenants [post]
 func (h *TenantHandler) CreateTenant(c *fiber.Ctx) error {
 	tenantRequest := new(models.Tenant)
 	if err := c.BodyParser(tenantRequest); err != nil {
@@ -43,7 +53,14 @@ func (h *TenantHandler) CreateTenant(c *fiber.Ctx) error {
 	return c.Status(http.StatusCreated).JSON(tenant)
 }
 
-// [DELETE] /v1/tenants/{id}
+// DeleteTenant deletes a tenant
+// @Summary Delete a tenant
+// @Description Delete a tenant and stop its consumer
+// @Tags tenants
+// @Param id path string true "Tenant ID"
+// @Success 200 {object} string
+// @Failure 500 {object} fiber.Error
+// @Router /tenants/{id} [delete]
 func (h *TenantHandler) DeleteTenant(c *fiber.Ctx) error {
 	tenantID := c.Params("id")
 
@@ -55,7 +72,18 @@ func (h *TenantHandler) DeleteTenant(c *fiber.Ctx) error {
 	return c.Status(http.StatusOK).JSON("tenant deleted")
 }
 
-// [PUT] /v1/tenants/{id}/config/concurreny
+// UpdateTenantConfig updates tenant configuration
+// @Summary Update tenant concurrency configuration
+// @Description Update the worker count for a tenant
+// @Tags tenants
+// @Accept json
+// @Produce json
+// @Param id path string true "Tenant ID"
+// @Param config body models.TenantConfigRequest true "Configuration"
+// @Success 200 {object} string
+// @Failure 400 {object} fiber.Error
+// @Failure 500 {object} fiber.Error
+// @Router /tenants/{id}/config/concurrency [put]
 func (h *TenantHandler) UpdateTenantConfig(c *fiber.Ctx) error {
 	tenantID := c.Params("id")
 
